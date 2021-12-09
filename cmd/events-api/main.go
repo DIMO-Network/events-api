@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/DIMO-INC/events-api/internal/config"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -35,6 +37,15 @@ func main() {
 	}
 }
 
+type EventMessage struct {
+	Type    string          `json:"type"`
+	Source  string          `json:"source"`
+	Subject string          `json:"subject"`
+	ID      string          `json:"id"`
+	Time    time.Time       `json:"time"`
+	Data    json.RawMessage `json:"data"`
+}
+
 func startWebAPI(logger zerolog.Logger, settings *config.Settings) {
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
 		"bootstrap.servers": "localhost:9092",
@@ -50,7 +61,11 @@ func startWebAPI(logger zerolog.Logger, settings *config.Settings) {
 	for {
 		msg, err := c.ReadMessage(-1)
 		if err == nil {
-			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
+			var event EventMessage
+			if err := json.Unmarshal(msg.Value, &event); err != nil {
+				fmt.Printf("JSON parsing error: %v (%v)\n", err, msg)
+			}
+			fmt.Printf("Message on %s: %v\n", msg.TopicPartition, event)
 		} else {
 			// The client will automatically try to recover from all errors.
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
