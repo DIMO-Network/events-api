@@ -56,68 +56,76 @@ type EventMessage struct {
 	Data    json.RawMessage `json:"data"`
 }
 
-func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.DbStore, ctx context.Context) {
-	go func() {
-		c, err := kafka.NewConsumer(&kafka.ConfigMap{
-			"bootstrap.servers":  "localhost:9092",
-			"group.id":           "events-api",
-			"auto.offset.reset":  "latest",
-			"enable.auto.commit": false,
-		})
-		if err != nil {
-			panic(err)
-		}
-		c.SubscribeTopics([]string{"events"}, nil)
+func kafkaWork(pdb database.DbStore, ctx context.Context) {
+	c, err := kafka.NewConsumer(&kafka.ConfigMap{
+		"bootstrap.servers":  "localhost:9092",
+		"group.id":           "events-api",
+		"auto.offset.reset":  "latest",
+		"enable.auto.commit": false,
+	})
+	if err != nil {
+		panic(err)
+	}
+	c.SubscribeTopics([]string{"events"}, nil)
 
-		last := time.Now()
-		var events []EventMessage
-		partitions := make(map[kafka.Offset]kafka.TopicPartition)
-		for {
-			msg, err := c.ReadMessage(500 * time.Millisecond)
-			if err == nil {
-				var event EventMessage
-				if err := json.Unmarshal(msg.Value, &event); err != nil {
-					fmt.Printf("JSON parsing error: %v (%v)\n", err, msg)
-				} else {
-					events = append(events, event)
-					if p, ok := partitions[msg.TopicPartition.Offset]; ok {
-						if p.Offset < msg.TopicPartition.Offset {
-							p.Offset = msg.TopicPartition.Offset
-						}
-					} else {
-						partitions[msg.TopicPartition.Offset] = p
+	last := time.Now()
+	var events []EventMessage
+	var topic = "events"
+	partitions := make(map[kafka.Offset]kafka.TopicPartition)
+	for {
+		msg, err := c.ReadMessage(500 * time.Millisecond)
+		if err == nil {
+			var event EventMessage
+			if err := json.Unmarshal(msg.Value, &event); err != nil {
+				fmt.Printf("JSON parsing error: %v (%v)\n", err, msg)
+			} else {
+				events = append(events, event)
+				if p, ok := partitions[msg.TopicPartition.Offset]; ok {
+					if p.Offset < msg.TopicPartition.Offset {
+						p.Offset = msg.TopicPartition.Offset
 					}
-					if now := time.Now(); now.Sub(last) > 10*time.Second {
-						func() {
-							last = now
-							tx, _ := pdb.DBS().Writer.BeginTx(ctx, nil)
-							defer tx.Rollback()
-							for _, event := range events {
-								dbEvent := models.Event{
-									Type:    event.Type,
-									Source:  event.Source,
-									Subject: event.Subject,
-									ID:      event.ID,
-									Time:    event.Time,
-									Data:    null.JSONFrom([]byte(event.Data)),
-								}
-								dbEvent.Upsert(ctx, pdb.DBS().GetWriterConn(), false, nil, boil.Infer(), boil.Infer())
-							}
-							tx.Commit()
-							temp := make([]kafka.TopicPartition, 0, len(partitions))
-							for _, p := range partitions {
-								temp = append(temp, p)
-							}
-							events = nil
-							c.CommitOffsets(temp)
-						}()
+				} else {
+					partitions[msg.TopicPartition.Offset] = kafka.TopicPartition{
+						Topic:     &topic,
+						Partition: p.Partition,
+						Offset:    p.Offset,
 					}
 				}
-			} else if err.(kafka.Error).Code() != kafka.ErrTimedOut {
-				fmt.Printf("Consumer error: %v\n", err)
+				if now := time.Now(); now.Sub(last) > 10*time.Second {
+					func() {
+						last = now
+						tx, _ := pdb.DBS().Writer.BeginTx(ctx, nil)
+						defer tx.Rollback()
+						for _, event := range events {
+							dbEvent := models.Event{
+								Type:    event.Type,
+								Source:  event.Source,
+								Subject: event.Subject,
+								ID:      event.ID,
+								Time:    event.Time,
+								Data:    null.JSONFrom([]byte(event.Data)),
+							}
+							dbEvent.Upsert(ctx, pdb.DBS().GetWriterConn(), false, nil, boil.Infer(), boil.Infer())
+						}
+						tx.Commit()
+						temp := make([]kafka.TopicPartition, 0)
+						for _, p := range partitions {
+							temp = append(temp, p)
+						}
+						fmt.Printf("Saved %d events\n", len(events))
+						events = nil
+						c.CommitOffsets(temp)
+					}()
+				}
 			}
+		} else if err.(kafka.Error).Code() != kafka.ErrTimedOut {
+			fmt.Printf("Consumer error: %v\n", err)
 		}
-	}()
+	}
+}
+
+func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.DbStore, ctx context.Context) {
+	go kafkaWork(pdb, ctx)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
