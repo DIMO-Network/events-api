@@ -88,27 +88,29 @@ func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.
 						partitions[msg.TopicPartition.Offset] = p
 					}
 					if now := time.Now(); now.Sub(last) > 10*time.Second {
-						last = now
-						tx, _ := pdb.DBS().Writer.BeginTx(ctx, nil)
-						defer tx.Rollback()
-						for _, event := range events {
-							dbEvent := models.Event{
-								Type:    event.Type,
-								Source:  event.Source,
-								Subject: event.Subject,
-								ID:      event.ID,
-								Time:    event.Time,
-								Data:    null.JSONFrom([]byte(event.Data)),
+						func() {
+							last = now
+							tx, _ := pdb.DBS().Writer.BeginTx(ctx, nil)
+							defer tx.Rollback()
+							for _, event := range events {
+								dbEvent := models.Event{
+									Type:    event.Type,
+									Source:  event.Source,
+									Subject: event.Subject,
+									ID:      event.ID,
+									Time:    event.Time,
+									Data:    null.JSONFrom([]byte(event.Data)),
+								}
+								dbEvent.Upsert(ctx, pdb.DBS().GetWriterConn(), false, nil, boil.Infer(), boil.Infer())
 							}
-							dbEvent.Upsert(ctx, pdb.DBS().GetWriterConn(), false, nil, boil.Infer(), boil.Infer())
-						}
-						tx.Commit()
-						temp := make([]kafka.TopicPartition, 0, len(partitions))
-						for _, p := range partitions {
-							temp = append(temp, p)
-						}
-						events = nil
-						c.CommitOffsets(temp)
+							tx.Commit()
+							temp := make([]kafka.TopicPartition, 0, len(partitions))
+							for _, p := range partitions {
+								temp = append(temp, p)
+							}
+							events = nil
+							c.CommitOffsets(temp)
+						}()
 					}
 				}
 			} else if err.(kafka.Error).Code() != kafka.ErrTimedOut {
