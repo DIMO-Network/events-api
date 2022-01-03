@@ -15,6 +15,8 @@ type Settings struct {
 	DBMaxIdleConnections int    `yaml:"DB_MAX_IDLE_CONNECTIONS"`
 	ServiceName          string `yaml:"SERVICE_NAME"`
 	JWTKeySetURL         string `yaml:"JWT_KEY_SET_URL"`
+	KafkaBrokers         string `yaml:"KAFKA_BROKERS"`
+	EventsTopic          string `yaml:"EVENTS_TOPIC"`
 }
 
 // GetWriterDSN builds the connection string to the db writer - for now same as reader

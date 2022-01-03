@@ -1,10 +1,10 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE events_api.events (
-    "type" TEXT NOT NULL,
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
     source TEXT NOT NULL,
     subject TEXT NOT NULL,
-    id TEXT PRIMARY KEY,
     time timestamptz NOT NULL,
     data jsonb
 );

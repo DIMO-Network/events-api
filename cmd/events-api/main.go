@@ -2,22 +2,19 @@ package main
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"os"
-	"time"
+	"strings"
 
 	"github.com/DIMO-INC/events-api/internal/config"
 	"github.com/DIMO-INC/events-api/internal/controllers"
 	"github.com/DIMO-INC/events-api/internal/database"
-	"github.com/DIMO-INC/events-api/models"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/DIMO-INC/events-api/internal/kafka"
+	"github.com/DIMO-INC/events-api/internal/services"
+	"github.com/Shopify/sarama"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/rs/zerolog"
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 func main() {
@@ -43,90 +40,34 @@ func main() {
 	case "migrate":
 		migrateDatabase(logger, settings)
 	default:
+		startEventConsumer(logger, settings, pdb)
 		startWebAPI(logger, settings, pdb, ctx)
 	}
 }
 
-type EventMessage struct {
-	Type    string          `json:"type"`
-	Source  string          `json:"source"`
-	Subject string          `json:"subject"`
-	ID      string          `json:"id"`
-	Time    time.Time       `json:"time"`
-	Data    json.RawMessage `json:"data"`
-}
+func startEventConsumer(logger zerolog.Logger, settings *config.Settings, pdb database.DbStore) {
+	clusterConfig := sarama.NewConfig()
+	clusterConfig.Version = sarama.V2_6_0_0
+	clusterConfig.Consumer.Offsets.Initial = sarama.OffsetNewest
 
-func kafkaWork(pdb database.DbStore, ctx context.Context) {
-	c, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:9092",
-		"group.id":           "events-api",
-		"auto.offset.reset":  "latest",
-		"enable.auto.commit": false,
-	})
+	cfg := &kafka.Config{
+		ClusterConfig:   clusterConfig,
+		BrokerAddresses: strings.Split(settings.KafkaBrokers, ","),
+		Topic:           settings.EventsTopic,
+		GroupID:         "event-sink",
+		MaxInFlight:     int64(5),
+	}
+	consumer, err := kafka.NewConsumer(cfg, &logger)
 	if err != nil {
-		panic(err)
+		logger.Fatal().Err(err).Msg("could not start consumer")
 	}
-	c.SubscribeTopics([]string{"events"}, nil)
+	ingestService := services.NewIngestService(pdb.DBS, &logger)
+	consumer.Start(context.Background(), ingestService.Ingest)
 
-	last := time.Now()
-	var events []EventMessage
-	var topic = "events"
-	partitions := make(map[kafka.Offset]kafka.TopicPartition)
-	for {
-		msg, err := c.ReadMessage(500 * time.Millisecond)
-		if err == nil {
-			var event EventMessage
-			if err := json.Unmarshal(msg.Value, &event); err != nil {
-				fmt.Printf("JSON parsing error: %v (%v)\n", err, msg)
-			} else {
-				events = append(events, event)
-				if p, ok := partitions[msg.TopicPartition.Offset]; ok {
-					if p.Offset < msg.TopicPartition.Offset {
-						p.Offset = msg.TopicPartition.Offset
-					}
-				} else {
-					partitions[msg.TopicPartition.Offset] = kafka.TopicPartition{
-						Topic:     &topic,
-						Partition: p.Partition,
-						Offset:    p.Offset,
-					}
-				}
-				if now := time.Now(); now.Sub(last) > 10*time.Second {
-					func() {
-						last = now
-						tx, _ := pdb.DBS().Writer.BeginTx(ctx, nil)
-						defer tx.Rollback()
-						for _, event := range events {
-							dbEvent := models.Event{
-								Type:    event.Type,
-								Source:  event.Source,
-								Subject: event.Subject,
-								ID:      event.ID,
-								Time:    event.Time,
-								Data:    null.JSONFrom([]byte(event.Data)),
-							}
-							dbEvent.Upsert(ctx, pdb.DBS().GetWriterConn(), false, nil, boil.Infer(), boil.Infer())
-						}
-						tx.Commit()
-						temp := make([]kafka.TopicPartition, 0)
-						for _, p := range partitions {
-							temp = append(temp, p)
-						}
-						fmt.Printf("Saved %d events\n", len(events))
-						events = nil
-						c.CommitOffsets(temp)
-					}()
-				}
-			}
-		} else if err.(kafka.Error).Code() != kafka.ErrTimedOut {
-			fmt.Printf("Consumer error: %v\n", err)
-		}
-	}
+	logger.Info().Msg("kafka consumer started")
 }
 
 func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.DbStore, ctx context.Context) {
-	go kafkaWork(pdb, ctx)
-
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return ErrorHandler(c, err, logger)

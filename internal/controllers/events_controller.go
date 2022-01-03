@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"time"
-
 	"github.com/DIMO-INC/events-api/internal/config"
 	"github.com/DIMO-INC/events-api/internal/database"
 	"github.com/DIMO-INC/events-api/models"
@@ -11,10 +9,9 @@ import (
 )
 
 type EventsController struct {
-	Settings        *config.Settings
-	DBS             func() *database.DBReaderWriter
-	log             *zerolog.Logger
-	allowedLateness time.Duration
+	Settings *config.Settings
+	DBS      func() *database.DBReaderWriter
+	log      *zerolog.Logger
 }
 
 func NewEventsController(settings *config.Settings, dbs func() *database.DBReaderWriter, logger *zerolog.Logger) EventsController {
