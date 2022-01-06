@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/DIMO-INC/events-api/internal/config"
 	"github.com/DIMO-INC/events-api/internal/controllers"
@@ -14,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	jwtware "github.com/gofiber/jwt/v3"
 	"github.com/rs/zerolog"
 )
 
@@ -74,6 +76,14 @@ func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.
 		},
 		DisableStartupMessage: true,
 	})
+
+	keyRefreshInterval := time.Hour
+	keyRefreshUnknownKID := true
+	jwtAuth := jwtware.New(jwtware.Config{
+		KeySetURL:            settings.JWTKeySetURL,
+		KeyRefreshInterval:   &keyRefreshInterval,
+		KeyRefreshUnknownKID: &keyRefreshUnknownKID,
+	})
 	eventsController := controllers.NewEventsController(settings, pdb.DBS, &logger)
 
 	app.Use(recover.New(recover.Config{
@@ -84,7 +94,7 @@ func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.
 	app.Use(cors.New())
 	app.Get("/", HealthCheck)
 
-	v1 := app.Group("/v1/events")
+	v1 := app.Group("/v1/events", jwtAuth)
 	v1.Get("/", eventsController.GetEvents)
 
 	logger.Info().Msg("Server started on port " + settings.Port)

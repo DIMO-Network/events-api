@@ -6,6 +6,7 @@ import (
 	"github.com/DIMO-INC/events-api/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 type EventsController struct {
@@ -23,7 +24,22 @@ func NewEventsController(settings *config.Settings, dbs func() *database.DBReade
 }
 
 func (e *EventsController) GetEvents(c *fiber.Ctx) error {
-	events, err := models.Events().All(c.Context(), e.DBS().Reader)
+	userID := getUserID(c)
+	mods := []qm.QueryMod{
+		models.EventWhere.UserID.EQ(userID),
+		qm.OrderBy("timestamp DESC"),
+	}
+
+	eventType := c.Query("type")
+	if eventType != "" {
+		mods = append(mods, models.EventWhere.Type.EQ(eventType))
+		eventSubType := c.Query("subType")
+		if eventSubType != "" {
+			mods = append(mods, models.EventWhere.SubType.EQ(eventSubType))
+		}
+	}
+
+	events, err := models.Events(mods...).All(c.Context(), e.DBS().Reader)
 	if err != nil {
 		return c.JSON(fiber.Map{"Uhoh": err.Error()})
 	}

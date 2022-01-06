@@ -1,11 +1,11 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE events_api.events (
-    id TEXT PRIMARY KEY,
+    id CHAR(27) PRIMARY KEY, -- KSUID
     type TEXT NOT NULL,
-    source TEXT NOT NULL,
-    subject TEXT NOT NULL,
-    time timestamptz NOT NULL,
+    sub_type TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    timestamp timestamptz NOT NULL,
     data jsonb
 );
 -- +goose StatementEnd

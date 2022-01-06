@@ -24,47 +24,47 @@ import (
 
 // Event is an object representing the database table.
 type Event struct {
-	Type    string    `boil:"type" json:"type" toml:"type" yaml:"type"`
-	Source  string    `boil:"source" json:"source" toml:"source" yaml:"source"`
-	Subject string    `boil:"subject" json:"subject" toml:"subject" yaml:"subject"`
-	ID      string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Time    time.Time `boil:"time" json:"time" toml:"time" yaml:"time"`
-	Data    null.JSON `boil:"data" json:"data,omitempty" toml:"data" yaml:"data,omitempty"`
+	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Type      string    `boil:"type" json:"type" toml:"type" yaml:"type"`
+	SubType   string    `boil:"sub_type" json:"sub_type" toml:"sub_type" yaml:"sub_type"`
+	UserID    string    `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
+	Timestamp time.Time `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
+	Data      null.JSON `boil:"data" json:"data,omitempty" toml:"data" yaml:"data,omitempty"`
 
 	R *eventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var EventColumns = struct {
-	Type    string
-	Source  string
-	Subject string
-	ID      string
-	Time    string
-	Data    string
+	ID        string
+	Type      string
+	SubType   string
+	UserID    string
+	Timestamp string
+	Data      string
 }{
-	Type:    "type",
-	Source:  "source",
-	Subject: "subject",
-	ID:      "id",
-	Time:    "time",
-	Data:    "data",
+	ID:        "id",
+	Type:      "type",
+	SubType:   "sub_type",
+	UserID:    "user_id",
+	Timestamp: "timestamp",
+	Data:      "data",
 }
 
 var EventTableColumns = struct {
-	Type    string
-	Source  string
-	Subject string
-	ID      string
-	Time    string
-	Data    string
+	ID        string
+	Type      string
+	SubType   string
+	UserID    string
+	Timestamp string
+	Data      string
 }{
-	Type:    "events.type",
-	Source:  "events.source",
-	Subject: "events.subject",
-	ID:      "events.id",
-	Time:    "events.time",
-	Data:    "events.data",
+	ID:        "events.id",
+	Type:      "events.type",
+	SubType:   "events.sub_type",
+	UserID:    "events.user_id",
+	Timestamp: "events.timestamp",
+	Data:      "events.data",
 }
 
 // Generated where
@@ -138,19 +138,19 @@ func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsN
 func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var EventWhere = struct {
-	Type    whereHelperstring
-	Source  whereHelperstring
-	Subject whereHelperstring
-	ID      whereHelperstring
-	Time    whereHelpertime_Time
-	Data    whereHelpernull_JSON
+	ID        whereHelperstring
+	Type      whereHelperstring
+	SubType   whereHelperstring
+	UserID    whereHelperstring
+	Timestamp whereHelpertime_Time
+	Data      whereHelpernull_JSON
 }{
-	Type:    whereHelperstring{field: "\"events_api\".\"events\".\"type\""},
-	Source:  whereHelperstring{field: "\"events_api\".\"events\".\"source\""},
-	Subject: whereHelperstring{field: "\"events_api\".\"events\".\"subject\""},
-	ID:      whereHelperstring{field: "\"events_api\".\"events\".\"id\""},
-	Time:    whereHelpertime_Time{field: "\"events_api\".\"events\".\"time\""},
-	Data:    whereHelpernull_JSON{field: "\"events_api\".\"events\".\"data\""},
+	ID:        whereHelperstring{field: "\"events_api\".\"events\".\"id\""},
+	Type:      whereHelperstring{field: "\"events_api\".\"events\".\"type\""},
+	SubType:   whereHelperstring{field: "\"events_api\".\"events\".\"sub_type\""},
+	UserID:    whereHelperstring{field: "\"events_api\".\"events\".\"user_id\""},
+	Timestamp: whereHelpertime_Time{field: "\"events_api\".\"events\".\"timestamp\""},
+	Data:      whereHelpernull_JSON{field: "\"events_api\".\"events\".\"data\""},
 }
 
 // EventRels is where relationship names are stored.
@@ -170,8 +170,8 @@ func (*eventR) NewStruct() *eventR {
 type eventL struct{}
 
 var (
-	eventAllColumns            = []string{"type", "source", "subject", "id", "time", "data"}
-	eventColumnsWithoutDefault = []string{"type", "source", "subject", "id", "time", "data"}
+	eventAllColumns            = []string{"id", "type", "sub_type", "user_id", "timestamp", "data"}
+	eventColumnsWithoutDefault = []string{"id", "type", "sub_type", "user_id", "timestamp", "data"}
 	eventColumnsWithDefault    = []string{}
 	eventPrimaryKeyColumns     = []string{"id"}
 )

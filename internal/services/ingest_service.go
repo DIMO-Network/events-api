@@ -22,6 +22,10 @@ type EventMessage struct {
 	Data    json.RawMessage `json:"data"`
 }
 
+type partialUser struct {
+	UserID string `json:"userId"`
+}
+
 type IngestService struct {
 	db            func() *database.DBReaderWriter
 	logger        *zerolog.Logger
@@ -50,6 +54,22 @@ func (i *IngestService) Ingest(messages <-chan *message.Message) {
 	}
 }
 
+type tag struct {
+	Type    string
+	SubType string
+}
+
+var tagMap = map[string]tag{
+	"com.dimo.zone.user.create":               {"User", "Created"},
+	"com.dimo.zone.device.create":             {"Device", "Created"},
+	"com.dimo.zone.device.delete":             {"Device", "Deleted"},
+	"com.dimo.zone.device.integration.create": {"Device", "IntegrationCreated"},
+	"com.dimo.zone.device.integration.delete": {"Device", "IntegrationDeleted"},
+	"com.dimo.zone.device.odometer.update":    {"Device", "OdometerUpdated"},
+	"com.dimo.zone.device.user.token.issue":   {"User", "TokensIssued"},
+	"com.dimo.zone.user.referral.complete":    {"User", "ReferralCompleted"},
+}
+
 func (i *IngestService) insertEvents() error {
 	tx, err := i.db().Writer.BeginTx(context.Background(), nil)
 	if err != nil {
@@ -65,13 +85,26 @@ func (i *IngestService) insertEvents() error {
 			continue
 		}
 
+		tag, ok := tagMap[event.Type]
+		if !ok {
+			i.logger.Error().Msgf("Event %s has unrecognized event type %s, skipping", event.ID, event.Type)
+			continue
+		}
+
+		var user partialUser
+		err = json.Unmarshal(event.Data, &user)
+		if err != nil {
+			i.logger.Err(err).Msgf("Event %s had an unparseable data field, skipping", event.ID)
+			continue
+		}
+
 		dbEvent := models.Event{
-			ID:      event.ID,
-			Type:    event.Type,
-			Source:  event.Source,
-			Subject: event.Subject,
-			Time:    event.Time,
-			Data:    null.JSONFrom(event.Data),
+			ID:        event.ID,
+			Type:      tag.Type,
+			SubType:   tag.SubType,
+			UserID:    user.UserID,
+			Timestamp: event.Time,
+			Data:      null.JSONFrom(event.Data),
 		}
 		err = dbEvent.Upsert(context.Background(), tx, false, []string{"id"}, boil.Infer(), boil.Infer())
 		if err != nil {
