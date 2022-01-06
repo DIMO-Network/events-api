@@ -66,7 +66,7 @@ var tagMap = map[string]tag{
 	"com.dimo.zone.device.integration.create": {"Device", "IntegrationCreated"},
 	"com.dimo.zone.device.integration.delete": {"Device", "IntegrationDeleted"},
 	"com.dimo.zone.device.odometer.update":    {"Device", "OdometerUpdated"},
-	"com.dimo.zone.device.user.token.issue":   {"User", "TokensIssued"},
+	"com.dimo.zone.user.token.issue":          {"User", "TokensIssued"},
 	"com.dimo.zone.user.referral.complete":    {"User", "ReferralCompleted"},
 }
 
@@ -106,8 +106,10 @@ func (i *IngestService) insertEvents() error {
 			Timestamp: event.Time,
 			Data:      null.JSONFrom(event.Data),
 		}
+
 		err = dbEvent.Upsert(context.Background(), tx, false, []string{"id"}, boil.Infer(), boil.Infer())
 		if err != nil {
+			i.logger.Err(err).Msg("Failed to insert event")
 			return err
 		}
 	}

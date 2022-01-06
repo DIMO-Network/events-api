@@ -33,7 +33,7 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	eventType := c.Query("type")
 	if eventType != "" {
 		mods = append(mods, models.EventWhere.Type.EQ(eventType))
-		eventSubType := c.Query("subType")
+		eventSubType := c.Query("sub_type")
 		if eventSubType != "" {
 			mods = append(mods, models.EventWhere.SubType.EQ(eventSubType))
 		}
@@ -42,6 +42,10 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	events, err := models.Events(mods...).All(c.Context(), e.DBS().Reader)
 	if err != nil {
 		return c.JSON(fiber.Map{"Uhoh": err.Error()})
+	}
+
+	if events == nil {
+		return c.JSON(models.EventSlice{})
 	}
 	return c.JSON(events)
 }
