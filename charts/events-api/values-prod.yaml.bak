@@ -1,0 +1,93 @@
+replicaCount: 2
+image:
+  repository: dimozone/devices-api
+  pullPolicy: IfNotPresent
+  tag: 0.2.0
+imagePullSecrets: []
+nameOverride: ''
+fullnameOverride: ''
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ''
+podAnnotations: {}
+podSecurityContext: {}
+securityContext: {}
+env:
+  ENVIRONMENT: prod
+  PORT: '8080'
+  LOG_LEVEL: info
+  DB_PORT: '5432'
+  DB_NAME: devices_api
+  DB_MAX_OPEN_CONNECTIONS: '50'
+  DB_MAX_IDLE_CONNECTIONS: '15'
+  SERVICE_NAME: devices-api
+  JWT_KEY_SET_URL: https://auth.dimo.zone/keys
+  SWAGGER_BASE_URL: https://devices-api.dimo.zone/v1/swagger
+  TOR_PROXY_URL: socks5://tor-prod:9050
+  REDIS_USER: default
+  REDIS_CLUSTER_MODE: true
+  REDIS_TLS: true
+  INGEST_SMARTCAR_URL: http://ingest-smartcar-prod:8080
+  INGEST_SMARTCAR_TOPIC: topic.interface.ingest.smartcar
+  KAFKA_BROKERS: kafka-prod-dimo-kafka-kafka-brokers:9092
+  DEVICE_STATUS_TOPIC: topic.device.status
+  
+service:
+  type: ClusterIP
+  ports:
+    mon-http:
+      port: 8888
+      targetPort: mon-http
+      protocol: TCP
+    http:
+      port: 8080
+      targetPort: http
+      protocol: TCP
+
+ports:
+  - name: mon-http
+    containerPort: 8888
+    protocol: TCP
+  - name: http
+    containerPort: 8080
+    protocol: TCP
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/enable-modsecurity: 'true'
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: 'true'
+    nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
+    nginx.ingress.kubernetes.io/cors-allow-origin: https://app.dimo.zone
+    external-dns.alpha.kubernetes.io/hostname: devices-api.dimo.zone
+  hosts:
+    - host: devices-api.dimo.zone
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+resources:
+  limits:
+    cpu: 1
+    memory: 1024Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podDisruptionBudget:
+  minAvailable: 1
+
+
+kafka:
+  clusterName: kafka-prod-dimo-kafka
