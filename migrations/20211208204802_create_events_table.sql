@@ -5,6 +5,7 @@ CREATE TABLE events_api.events (
     type TEXT NOT NULL,
     sub_type TEXT NOT NULL,
     user_id TEXT NOT NULL,
+    device_id CHAR(27), -- KSUID
     timestamp timestamptz NOT NULL,
     data jsonb
 );

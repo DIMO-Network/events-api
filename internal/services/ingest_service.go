@@ -54,12 +54,12 @@ func (i *IngestService) Ingest(messages <-chan *message.Message) {
 	}
 }
 
-type tag struct {
+type eventType struct {
 	Type    string
 	SubType string
 }
 
-var tagMap = map[string]tag{
+var eventTypeMap = map[string]eventType{
 	"com.dimo.zone.user.create":               {"User", "Created"},
 	"com.dimo.zone.device.create":             {"Device", "Created"},
 	"com.dimo.zone.device.delete":             {"Device", "Deleted"},
@@ -85,7 +85,7 @@ func (i *IngestService) insertEvents() error {
 			continue
 		}
 
-		tag, ok := tagMap[event.Type]
+		eventType, ok := eventTypeMap[event.Type]
 		if !ok {
 			i.logger.Error().Msgf("Event %s has unrecognized event type %s, skipping", event.ID, event.Type)
 			continue
@@ -100,8 +100,8 @@ func (i *IngestService) insertEvents() error {
 
 		dbEvent := models.Event{
 			ID:        event.ID,
-			Type:      tag.Type,
-			SubType:   tag.SubType,
+			Type:      eventType.Type,
+			SubType:   eventType.SubType,
 			UserID:    user.UserID,
 			Timestamp: event.Time,
 			Data:      null.JSONFrom(event.Data),

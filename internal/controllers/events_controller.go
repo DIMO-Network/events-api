@@ -6,6 +6,7 @@ import (
 	"github.com/DIMO-INC/events-api/models"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
@@ -27,7 +28,12 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	mods := []qm.QueryMod{
 		models.EventWhere.UserID.EQ(userID),
-		qm.OrderBy("timestamp DESC"),
+		qm.OrderBy(models.EventColumns.Timestamp + " DESC"),
+	}
+
+	deviceID := c.Query("device_id")
+	if deviceID != "" {
+		mods = append(mods, models.EventWhere.DeviceID.EQ(null.StringFrom(deviceID)))
 	}
 
 	eventType := c.Query("type")

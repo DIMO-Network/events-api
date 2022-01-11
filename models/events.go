@@ -24,12 +24,13 @@ import (
 
 // Event is an object representing the database table.
 type Event struct {
-	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Type      string    `boil:"type" json:"type" toml:"type" yaml:"type"`
-	SubType   string    `boil:"sub_type" json:"sub_type" toml:"sub_type" yaml:"sub_type"`
-	UserID    string    `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
-	Timestamp time.Time `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
-	Data      null.JSON `boil:"data" json:"data,omitempty" toml:"data" yaml:"data,omitempty"`
+	ID        string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Type      string      `boil:"type" json:"type" toml:"type" yaml:"type"`
+	SubType   string      `boil:"sub_type" json:"sub_type" toml:"sub_type" yaml:"sub_type"`
+	UserID    string      `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
+	DeviceID  null.String `boil:"device_id" json:"device_id,omitempty" toml:"device_id" yaml:"device_id,omitempty"`
+	Timestamp time.Time   `boil:"timestamp" json:"timestamp" toml:"timestamp" yaml:"timestamp"`
+	Data      null.JSON   `boil:"data" json:"data,omitempty" toml:"data" yaml:"data,omitempty"`
 
 	R *eventR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L eventL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -40,6 +41,7 @@ var EventColumns = struct {
 	Type      string
 	SubType   string
 	UserID    string
+	DeviceID  string
 	Timestamp string
 	Data      string
 }{
@@ -47,6 +49,7 @@ var EventColumns = struct {
 	Type:      "type",
 	SubType:   "sub_type",
 	UserID:    "user_id",
+	DeviceID:  "device_id",
 	Timestamp: "timestamp",
 	Data:      "data",
 }
@@ -56,6 +59,7 @@ var EventTableColumns = struct {
 	Type      string
 	SubType   string
 	UserID    string
+	DeviceID  string
 	Timestamp string
 	Data      string
 }{
@@ -63,6 +67,7 @@ var EventTableColumns = struct {
 	Type:      "events.type",
 	SubType:   "events.sub_type",
 	UserID:    "events.user_id",
+	DeviceID:  "events.device_id",
 	Timestamp: "events.timestamp",
 	Data:      "events.data",
 }
@@ -91,6 +96,30 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	}
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
+
+type whereHelpernull_String struct{ field string }
+
+func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 type whereHelpertime_Time struct{ field string }
 
@@ -142,6 +171,7 @@ var EventWhere = struct {
 	Type      whereHelperstring
 	SubType   whereHelperstring
 	UserID    whereHelperstring
+	DeviceID  whereHelpernull_String
 	Timestamp whereHelpertime_Time
 	Data      whereHelpernull_JSON
 }{
@@ -149,6 +179,7 @@ var EventWhere = struct {
 	Type:      whereHelperstring{field: "\"events_api\".\"events\".\"type\""},
 	SubType:   whereHelperstring{field: "\"events_api\".\"events\".\"sub_type\""},
 	UserID:    whereHelperstring{field: "\"events_api\".\"events\".\"user_id\""},
+	DeviceID:  whereHelpernull_String{field: "\"events_api\".\"events\".\"device_id\""},
 	Timestamp: whereHelpertime_Time{field: "\"events_api\".\"events\".\"timestamp\""},
 	Data:      whereHelpernull_JSON{field: "\"events_api\".\"events\".\"data\""},
 }
@@ -170,8 +201,8 @@ func (*eventR) NewStruct() *eventR {
 type eventL struct{}
 
 var (
-	eventAllColumns            = []string{"id", "type", "sub_type", "user_id", "timestamp", "data"}
-	eventColumnsWithoutDefault = []string{"id", "type", "sub_type", "user_id", "timestamp", "data"}
+	eventAllColumns            = []string{"id", "type", "sub_type", "user_id", "device_id", "timestamp", "data"}
+	eventColumnsWithoutDefault = []string{"id", "type", "sub_type", "user_id", "device_id", "timestamp", "data"}
 	eventColumnsWithDefault    = []string{}
 	eventPrimaryKeyColumns     = []string{"id"}
 )
