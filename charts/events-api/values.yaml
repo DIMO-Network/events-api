@@ -24,14 +24,8 @@ env:
   SERVICE_NAME: events-api
   JWT_KEY_SET_URL: https://auth.dev.dimo.zone/keys
   SWAGGER_BASE_URL: https://events-api.dev.dimo.zone/v1/swagger
-  TOR_PROXY_URL: socks5://tor-dev:9050
-  REDIS_USER: default
-  REDIS_PORT: '6379'
-  REDIS_TLS: true
-  INGEST_SMARTCAR_URL: http://ingest-smartcar-dev:8080
-  INGEST_SMARTCAR_TOPIC: topic.interface.ingest.smartcar
   KAFKA_BROKERS: kafka-dev-dimo-kafka-kafka-brokers:9092
-  DEVICE_STATUS_TOPIC: topic.device.status
+  EVENTs_TOPIC: topic.event
 service:
   type: ClusterIP
   ports:
