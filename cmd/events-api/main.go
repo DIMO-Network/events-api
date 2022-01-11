@@ -43,7 +43,7 @@ func main() {
 		migrateDatabase(logger, settings)
 	default:
 		startEventConsumer(logger, settings, pdb)
-		startWebAPI(logger, settings, pdb, ctx)
+		startWebAPI(logger, settings, pdb)
 	}
 }
 
@@ -69,7 +69,7 @@ func startEventConsumer(logger zerolog.Logger, settings *config.Settings, pdb da
 	logger.Info().Msg("kafka consumer started")
 }
 
-func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.DbStore, ctx context.Context) {
+func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.DbStore) {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			return ErrorHandler(c, err, logger)
