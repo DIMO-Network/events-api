@@ -25,7 +25,7 @@ env:
   JWT_KEY_SET_URL: https://auth.dev.dimo.zone/keys
   SWAGGER_BASE_URL: https://events-api.dev.dimo.zone/v1/swagger
   KAFKA_BROKERS: kafka-dev-dimo-kafka-kafka-brokers:9092
-  EVENTs_TOPIC: topic.event
+  EVENTS_TOPIC: topic.event
 service:
   type: ClusterIP
   ports:
