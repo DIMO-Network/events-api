@@ -22,8 +22,11 @@ type EventMessage struct {
 	Data    json.RawMessage `json:"data"`
 }
 
-type partialUser struct {
+type partialInfo struct {
 	UserID string `json:"userId"`
+	Device struct {
+		ID null.String `json:"id"`
+	} `json:"device"`
 }
 
 type IngestService struct {
@@ -91,8 +94,8 @@ func (i *IngestService) insertEvents() error {
 			continue
 		}
 
-		var user partialUser
-		err = json.Unmarshal(event.Data, &user)
+		var info partialInfo
+		err = json.Unmarshal(event.Data, &info)
 		if err != nil {
 			i.logger.Err(err).Msgf("Event %s had an unparseable data field, skipping", event.ID)
 			continue
@@ -102,7 +105,8 @@ func (i *IngestService) insertEvents() error {
 			ID:        event.ID,
 			Type:      eventType.Type,
 			SubType:   eventType.SubType,
-			UserID:    user.UserID,
+			UserID:    info.UserID,
+			DeviceID:  info.Device.ID, // Will be null for "pure" user events.
 			Timestamp: event.Time,
 			Data:      null.JSONFrom(event.Data),
 		}
