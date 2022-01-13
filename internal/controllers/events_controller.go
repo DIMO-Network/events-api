@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"time"
+
 	"github.com/DIMO-INC/events-api/internal/config"
 	"github.com/DIMO-INC/events-api/internal/database"
 	"github.com/DIMO-INC/events-api/models"
@@ -22,6 +24,17 @@ func NewEventsController(settings *config.Settings, dbs func() *database.DBReade
 		DBS:      dbs,
 		log:      logger,
 	}
+}
+
+// Just want to get the fields into camelCase. Is there a better way?
+type EventResponseEntry struct {
+	ID        string      `json:"id"`
+	Type      string      `json:"type"`
+	SubType   string      `json:"subType"`
+	UserID    string      `json:"userId"`
+	DeviceID  null.String `json:"deviceId"`
+	Timestamp time.Time   `json:"timestamp"`
+	Data      interface{} `json:"data"`
 }
 
 func (e *EventsController) GetEvents(c *fiber.Ctx) error {
@@ -53,5 +66,18 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	if events == nil {
 		return c.JSON(models.EventSlice{})
 	}
-	return c.JSON(events)
+
+	respEvents := make([]EventResponseEntry, len(events))
+	for i, event := range events {
+		respEvents[i] = EventResponseEntry{
+			ID:        event.ID,
+			Type:      event.Type,
+			SubType:   event.SubType,
+			UserID:    event.UserID,
+			Timestamp: event.Timestamp,
+			Data:      event.Data,
+		}
+	}
+
+	return c.JSON(respEvents)
 }
