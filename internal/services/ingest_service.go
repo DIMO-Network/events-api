@@ -23,8 +23,9 @@ type EventMessage struct {
 }
 
 type partialInfo struct {
-	UserID string `json:"userId"`
-	Device struct {
+	UserID    string    `json:"userId"`
+	Timestamp time.Time `json:"timestamp"`
+	Device    struct {
 		ID null.String `json:"id"`
 	} `json:"device"`
 }
@@ -107,7 +108,7 @@ func (i *IngestService) insertEvents() error {
 			SubType:   eventType.SubType,
 			UserID:    info.UserID,
 			DeviceID:  info.Device.ID, // Will be null for "pure" user events.
-			Timestamp: event.Time,
+			Timestamp: info.Timestamp,
 			Data:      null.JSONFrom(event.Data),
 		}
 
