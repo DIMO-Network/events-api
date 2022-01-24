@@ -54,6 +54,7 @@ func (i *IngestService) Ingest(messages <-chan *message.Message) {
 			}
 		case message := <-messages:
 			i.messageBuffer = append(i.messageBuffer, message)
+			message.Ack()
 		}
 	}
 }
@@ -122,10 +123,6 @@ func (i *IngestService) insertEvents() error {
 	err = tx.Commit()
 	if err != nil {
 		return err
-	}
-
-	for _, message := range i.messageBuffer {
-		message.Ack()
 	}
 
 	// Keep the capacity around. Maybe revisit this.
