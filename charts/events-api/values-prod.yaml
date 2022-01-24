@@ -2,7 +2,7 @@ replicaCount: 2
 image:
   repository: dimozone/events-api
   pullPolicy: IfNotPresent
-  tag: 0.2.0
+  tag: 0.1.1
 imagePullSecrets: []
 nameOverride: ''
 fullnameOverride: ''
@@ -26,7 +26,6 @@ env:
   SWAGGER_BASE_URL: https://events-api.dimo.zone/v1/swagger
   KAFKA_BROKERS: kafka-prod-dimo-kafka-kafka-brokers:9092
   EVENTS_TOPIC: topic.event
-  
 service:
   type: ClusterIP
   ports:
@@ -38,7 +37,6 @@ service:
       port: 8080
       targetPort: http
       protocol: TCP
-
 ports:
   - name: mon-http
     containerPort: 8888
@@ -46,7 +44,6 @@ ports:
   - name: http
     containerPort: 8080
     protocol: TCP
-
 ingress:
   enabled: true
   className: nginx
@@ -81,7 +78,5 @@ tolerations: []
 affinity: {}
 podDisruptionBudget:
   minAvailable: 1
-
-
 kafka:
   clusterName: kafka-prod-dimo-kafka
