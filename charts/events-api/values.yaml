@@ -11,8 +11,12 @@ serviceAccount:
   annotations: {}
   name: ''
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 3000
+securityContext:
+  allowPrivilegeEscalation: false
 env:
   ENVIRONMENT: dev
   PORT: '8080'
