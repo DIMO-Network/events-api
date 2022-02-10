@@ -6,12 +6,14 @@ import (
 	"strings"
 	"time"
 
+	_ "github.com/DIMO-INC/events-api/docs"
 	"github.com/DIMO-INC/events-api/internal/config"
 	"github.com/DIMO-INC/events-api/internal/controllers"
 	"github.com/DIMO-INC/events-api/internal/database"
 	"github.com/DIMO-INC/events-api/internal/kafka"
 	"github.com/DIMO-INC/events-api/internal/services"
 	"github.com/Shopify/sarama"
+	swagger "github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
@@ -19,6 +21,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// @title DIMO Events API
+// @version 1.0
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	gitSha1 := os.Getenv("GIT_SHA1")
 	ctx := context.Background()
@@ -93,6 +100,7 @@ func startWebAPI(logger zerolog.Logger, settings *config.Settings, pdb database.
 	}))
 	app.Use(cors.New())
 	app.Get("/", HealthCheck)
+	app.Get("/v1/swagger/*", swagger.HandlerDefault)
 
 	v1 := app.Group("/v1/events", jwtAuth)
 	v1.Get("/", eventsController.GetEvents)
