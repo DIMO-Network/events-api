@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: dimozone/events-api
   pullPolicy: IfNotPresent
-  tag: 6f079a6
+  tag: fb1b394
 imagePullSecrets: []
 nameOverride: ''
 fullnameOverride: ''
@@ -11,8 +11,15 @@ serviceAccount:
   annotations: {}
   name: ''
 podAnnotations: {}
-podSecurityContext: {}
-securityContext: {}
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1001
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - all
 env:
   ENVIRONMENT: dev
   PORT: '8080'
@@ -48,8 +55,6 @@ ingress:
   enabled: true
   className: nginx
   annotations:
-    nginx.ingress.kubernetes.io/enable-modsecurity: 'true'
-    nginx.ingress.kubernetes.io/enable-owasp-core-rules: 'true'
     nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
     nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
     nginx.ingress.kubernetes.io/enable-cors: 'true'
