@@ -1,0 +1,80 @@
+definitions:
+  controllers.EventResponseEntry:
+    properties:
+      data:
+        description: Data is an event-specific object containing more information
+          about the event.
+      deviceId:
+        description: DeviceID is the DIMO device ID when the event relates to a device.
+        type: string
+      id:
+        description: ID is the event ID, a KSUID.
+        type: string
+      subType:
+        description: SubType is a more specific classification of the event.
+        example: Created
+        type: string
+      timestamp:
+        type: string
+      type:
+        description: Type is the type of the event, either "User" or "Device".
+        example: Device
+        type: string
+      userId:
+        description: UserID is the DIMO user id coming from the authentication service.
+        type: string
+    type: object
+info:
+  contact: {}
+  title: DIMO Events API
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - '*/*'
+      description: get the status of server.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Show the status of server.
+      tags:
+      - root
+  /v1/events:
+    get:
+      description: Lists the user's events in reverse chronological order
+      parameters:
+      - description: DIMO device ID
+        in: query
+        name: device_id
+        type: string
+      - description: Event type, usually User or Device
+        in: query
+        name: type
+        type: string
+      - description: Further refinement of the event type
+        in: query
+        name: sub_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/controllers.EventResponseEntry'
+            type: array
+      tags:
+      - events
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

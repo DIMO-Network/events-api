@@ -26,17 +26,32 @@ func NewEventsController(settings *config.Settings, dbs func() *database.DBReade
 	}
 }
 
-// Just want to get the fields into camelCase. Is there a better way?
+// EventResponseEntry represents a single user event.
 type EventResponseEntry struct {
-	ID        string      `json:"id"`
-	Type      string      `json:"type"`
-	SubType   string      `json:"subType"`
-	UserID    string      `json:"userId"`
-	DeviceID  null.String `json:"deviceId"`
+	// ID is the event ID, a KSUID.
+	ID string `json:"id"`
+	// Type is the type of the event, either "User" or "Device".
+	Type string `json:"type" example:"Device"`
+	// SubType is a more specific classification of the event.
+	SubType string `json:"subType" example:"Created"`
+	// UserID is the DIMO user id coming from the authentication service.
+	UserID string `json:"userId"`
+	// DeviceID is the DIMO device ID when the event relates to a device.
+	DeviceID  null.String `json:"deviceId" swaggertype:"string"`
 	Timestamp time.Time   `json:"timestamp"`
-	Data      interface{} `json:"data"`
+	// Data is an event-specific object containing more information about the event.
+	Data interface{} `json:"data"`
 }
 
+// GetEvents godoc
+// @Description Lists the user's events in reverse chronological order
+// @Tags events
+// @Produce json
+// @Param device_id query string false "DIMO device ID"
+// @Param type query string false "Event type, usually User or Device"
+// @Param sub_type query string false "Further refinement of the event type"
+// @Success 200 {object} []EventResponseEntry
+// @Router /v1/events [get]
 func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	mods := []qm.QueryMod{
