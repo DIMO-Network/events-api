@@ -57,6 +57,7 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	mods := []qm.QueryMod{
 		models.EventWhere.UserID.EQ(userID),
 		qm.OrderBy(models.EventColumns.Timestamp + " DESC"),
+		qm.Limit(100),
 	}
 
 	deviceID := c.Query("device_id")
