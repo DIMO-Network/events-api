@@ -2,8 +2,7 @@ replicaCount: 2
 image:
   repository: dimozone/events-api
   pullPolicy: IfNotPresent
-  tag: 0.1.1
-
+  tag: 0.1.2
 env:
   ENVIRONMENT: prod
   PORT: '8080'
@@ -17,7 +16,6 @@ env:
   SWAGGER_BASE_URL: https://events-api.dimo.zone/v1/swagger
   KAFKA_BROKERS: kafka-prod-dimo-kafka-kafka-brokers:9092
   EVENTS_TOPIC: topic.event
-
 ingress:
   enabled: true
   className: nginx
