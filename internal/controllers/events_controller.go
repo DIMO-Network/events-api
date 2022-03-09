@@ -1,6 +1,8 @@
 package controllers
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/DIMO-INC/events-api/internal/config"
@@ -56,8 +58,17 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	mods := []qm.QueryMod{
 		models.EventWhere.UserID.EQ(userID),
-		qm.OrderBy(models.EventColumns.Timestamp + " DESC"),
+		qm.OrderBy(models.EventColumns.Timestamp + " DESC"), // We may get in trouble here if some events have equal timestamps.
 		qm.Limit(100),
+	}
+
+	pageStr := c.Query("page")
+	if pageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("invalid page value %q", pageStr))
+		}
+		mods = append(mods, qm.Offset(page))
 	}
 
 	deviceID := c.Query("device_id")
