@@ -45,6 +45,8 @@ type EventResponseEntry struct {
 	Data interface{} `json:"data"`
 }
 
+const pageSize = 100
+
 // GetEvents godoc
 // @Description Lists the user's events in reverse chronological order
 // @Tags events
@@ -59,7 +61,7 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	mods := []qm.QueryMod{
 		models.EventWhere.UserID.EQ(userID),
 		qm.OrderBy(models.EventColumns.Timestamp + " DESC"), // We may get in trouble here if some events have equal timestamps.
-		qm.Limit(100),
+		qm.Limit(pageSize),
 	}
 
 	pageStr := c.Query("page")
@@ -68,7 +70,7 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf("invalid page value %q", pageStr))
 		}
-		mods = append(mods, qm.Offset(page))
+		mods = append(mods, qm.Offset(page*pageSize))
 	}
 
 	deviceID := c.Query("device_id")
