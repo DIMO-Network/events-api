@@ -47,7 +47,14 @@ func main() {
 	}
 	switch arg {
 	case "migrate":
-		migrateDatabase(logger, settings)
+		command := "up"
+		if len(os.Args) > 2 {
+			command = os.Args[2]
+			if command == "down-to" || command == "up-to" {
+				command = command + " " + os.Args[3]
+			}
+		}
+		migrateDatabase(logger, settings, command, "events_api")
 	default:
 		startEventConsumer(logger, settings, pdb)
 		startWebAPI(logger, settings, pdb)
