@@ -94,7 +94,7 @@ kafka:
         cleanup.policy: delete
         min.compaction.lag.ms: '3600000'
 serviceMonitor:
-  enabled: true
+  enabled: false
   path: /metrics
   port: mon-http
   interval: 30s
