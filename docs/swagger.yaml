@@ -1,5 +1,5 @@
 definitions:
-  controllers.EventResponseEntry:
+  internal_controllers.EventResponseEntry:
     properties:
       data:
         description: Data is an event-specific object containing more information
@@ -68,7 +68,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/controllers.EventResponseEntry'
+              $ref: '#/definitions/internal_controllers.EventResponseEntry'
             type: array
       tags:
       - events
