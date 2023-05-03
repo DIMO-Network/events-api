@@ -13,11 +13,11 @@ import (
 	"github.com/DIMO-INC/events-api/internal/kafka"
 	"github.com/DIMO-INC/events-api/internal/services"
 	"github.com/Shopify/sarama"
-	swagger "github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	jwtware "github.com/gofiber/jwt/v3"
+	"github.com/gofiber/swagger"
 	"github.com/rs/zerolog"
 )
 
