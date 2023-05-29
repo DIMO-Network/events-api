@@ -24,15 +24,16 @@ jobs:
         run: echo "::set-output name=sha7::$(echo ${GITHUB_SHA} | cut -c1-7)"
         
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./resources/docker/Dockerfile
           push: true
-          tags: dimozone/events-api:${{ steps.slug.outputs.sha7 }}, dimozone/events-api:latest
+          platforms: linux/amd64
+          tags: dimozone/devices-api:${{ steps.slug.outputs.sha7 }}, dimozone/devices-api:latest
 
       - name: Update Image Version in the related HelmChart values.yaml
-        uses: fjogeleit/yaml-update-action@master
+        uses: fjogeleit/yaml-update-action@v0.11.1
         with:
           valueFile: 'charts/events-api/values.yaml'
           propertyPath: 'image.tag'
