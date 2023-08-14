@@ -67,6 +67,7 @@ type eventType struct {
 var eventTypeMap = map[string]eventType{
 	"com.dimo.zone.user.create":               {"User", "Created"},
 	"com.dimo.zone.device.create":             {"Device", "Created"},
+	"com.dimo.zone.device.mint":               {"Device", "Minted"},
 	"com.dimo.zone.device.delete":             {"Device", "Deleted"},
 	"com.dimo.zone.device.integration.create": {"Device", "IntegrationCreated"},
 	"com.dimo.zone.device.integration.delete": {"Device", "IntegrationDeleted"},

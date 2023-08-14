@@ -60,6 +60,7 @@ func (e *EventsController) GetEvents(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	mods := []qm.QueryMod{
 		models.EventWhere.UserID.EQ(userID),
+		models.EventWhere.SubType.NEQ("Minted"),             // TODO(elffjs): Frontend doesn't know about these yet.
 		qm.OrderBy(models.EventColumns.Timestamp + " DESC"), // We may get in trouble here if some events have equal timestamps.
 		qm.Limit(pageSize),
 	}
